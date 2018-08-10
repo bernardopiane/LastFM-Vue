@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Material Design Bootstrap</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <!-- Material Design Bootstrap -->
+    <link href="css/mdb.min.css" rel="stylesheet">
+    <!-- Your custom styles (optional) -->
+    <link href="css/style.css" rel="stylesheet">
+    <!-- VUE -->
+    <script src="https://unpkg.com/vue"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <!-- Carousel -->
+    <link rel="stylesheet" href="Owl/assets/owl.carousel.css">
+    <link rel="stylesheet" href="Owl/assets/owl.theme.default.css">
+
+</head>
+
+<body>
+
+    <!-- Start your project here-->
+    <nav class="navbar navbar-expand-lg navbar-dark primary-color">
+        <a class="navbar-brand" href="#">Navbar</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+            aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="#">Home
+                        <span class="sr-only">(current)</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Favoritos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Lista</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <br>
+    <br>
+    <div class="display" id="app">
+        <button v-on:click="getUserInfo()">user</button>
+        <section v-if="loading" id="loading">
+            <div class="spinner">
+                <div class="bounce1"></div>
+                <div class="bounce2"></div>
+                <div class="bounce3"></div>
+            </div>
+        </section>
+        <section id="home" class="container">
+            <div class="row">
+                <div class="col">
+                    <div v-if="localArtist != null" class="topart">
+                        <h1>Top Artists Near You</h1>
+                        <div class="owl-carousel owl-theme owl-lazy">
+                            <div v-for="artist in localArtist.topartists.artist" v-on:click="grabBandaInfo(artist.name)">
+                                <img class="owl-lazy" v-bind:data-src="artist.image[2]['#text']" alt="" class="img-fluid">
+                                <div class="carousel-title truncate w-100 text-center">
+                                    {{artist.name}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="user" class="container">
+            <div class="row">
+                <div class="col">
+                    <div v-if="userInfo != null" class="topart">
+                        <div class="owl-carousel owl-theme owl-lazy">
+                            <div v-for="track in userInfo.toptracks.track">
+                                <img class="owl-lazy" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" v-bind:data-src="track.image[2]['#text']" alt="" class="img-fluid">
+                                <div class="carousel-title truncate w-100 text-center">
+                                    {{track.name}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <div class="container" id="busca">
+            <form class="pb-3">
+                <h1>BUSCAR BANDA SIMILAR</h1>
+                <div class="form-group">
+                    <input v-model="busca" type="text" class="form-control" id="bandaNome" placeholder="Nome da banda">
+                </div>
+                <button type="submit" @click.stop.prevent="grabSimilar(busca)" class="btn btn-primary">Submit</button>
+            </form>
+            <section v-if="errored">
+                <p>We're sorry, we're not able to retrieve this information at the moment, please try back later</p>
+            </section>
+            <br>
+            <section id="fav" v-if="list">
+                <div class="container">
+                    <div class="row" v-if="info !== null">
+                        <div class="col-sm-12 col-md-4 col-lg-3 mb-3" v-for="artist in info.similarartists.artist">
+                            <div class="card" v-on:click="grabBandaInfo(artist.name)">
+                                <img class="card-img-top b-lazy" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" v-bind:data-src="artist.image[2]['#text']"
+                                    v-bind:data-src="artist.image[2]['#text']" alt="Card image cap" onerror="this.src='notfound_placeholder.svg'">
+                                <!--     <img class="b-lazy" data-src="image.jpg" /> -->
+                                <div class="card-body">
+                                    <h5 class="card-title truncate">
+                                        <a>{{artist.name}}</a>
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" v-else>
+                        <div class="col">
+                            <p>Not found</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section id="fav" v-if="tagList">
+                <div class="container">
+                    <div class="row" v-if="tag !== null">
+                        <div class="col-sm-12 col-md-4 col-lg-3 mb-3" v-for="artist in tag.topartists.artist">
+                            <div class="card" v-on:click="grabBandaInfo(artist.name)">
+                                <img class="card-img-top b-lazy" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" v-bind:data-src="artist.image[2]['#text']"
+                                    v-bind:data-src="artist.image[2]['#text']" alt="Card image cap" onerror="this.src='notfound_placeholder.svg'">
+                                <!--     <img class="b-lazy" data-src="image.jpg" /> -->
+                                <div class="card-body">
+                                    <h5 class="card-title truncate">
+                                        <a>{{artist.name}}</a>
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" v-else>
+                        <div class="col">
+                            <p>Not found</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- <section id="tag" v-if="tagList">
+                <div class="container">
+                    <div class="row" v-if="tag !== null">
+                        <div class="col-sm-12 col-md-4 col-lg-3 mb-3" v-for="tag in tag.albums.album">
+                            <div class="card" v-on:click="grabBandaInfo(tag.name)">
+                                <img class="card-img-top b-lazy" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" v-bind:data-src="tag.image[2]['#text']"
+                                    v-bind:data-src="tag.image[2]['#text']" alt="Card image cap" onerror="this.src='notfound_placeholder.svg'">
+                                <div class="card-body">
+                                    <h5 class="card-title truncate">
+                                        <a>{{tag.name}}</a>
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" v-else>
+                        <div class="col">
+                            <p>Not found</p>
+                        </div>
+                    </div>
+                </div>
+            </section> -->
+
+            <!-- Modal -->
+            <div v-if="bandaInfo != null" class="modal fade" id="basicExampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+                aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">{{bandaInfo.artist.name}}</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-sm-12 col-md-4 text-center">
+                                    <img v-bind:src="bandaInfo.artist.image[2]['#text']" alt="" onerror="this.src='notfound_placeholder.svg'" class="img-fluid">
+                                </div>
+                                <div class="col-sm-12 col-md-8">
+                                    <div v-html="bandaInfo.artist.bio.summary">{{bandaInfo.artist.bio.summary}}</div>
+                                    <span v-for="tag in bandaInfo.artist.tags.tag" class="badge badge-pill purple m-1">
+                                        <a href="#" @click.stop.prevent="grabSimilar(busca)" v-on:click="searchTag(tag.name)">{{tag.name}}</a>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary" data-dismiss="modal">Add to Favorites</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /Start your project here-->
+
+        <!-- SCRIPTS -->
+        <!-- JQuery -->
+        <script type="text/javascript" src="js/jquery-3.3.1.min.js"></script>
+        <!-- Bootstrap tooltips -->
+        <script type="text/javascript" src="js/popper.min.js"></script>
+        <!-- Bootstrap core JavaScript -->
+        <script type="text/javascript" src="js/bootstrap.min.js"></script>
+        <!-- MDB core JavaScript -->
+        <script type="text/javascript" src="js/mdb.min.js"></script>
+        <!-- carousel -->
+        <script src="Owl/owl.carousel.js"></script>
+        <!-- Main -->
+        <script src="blazy-1.8.2/blazy.js"></script>
+        <script src="main.js"></script>
+</body>
+
+</html>
